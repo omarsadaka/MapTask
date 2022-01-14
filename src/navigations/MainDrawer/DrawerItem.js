@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.CairoBold,
     fontWeight:'800',
     marginStart: Dimensions.DEVICE_WIDTH * 0.04,
-    fontSize: Dimensions.DEVICE_HEIGHT * 0.016,
+    fontSize: Dimensions.DEVICE_WIDTH * 0.035,
   },
 });
 

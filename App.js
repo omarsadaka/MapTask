@@ -8,27 +8,28 @@ LogBox.ignoreAllLogs()
 const App = () => {
   I18nManager.allowRTL(false);
   const{
-    name, setName,
+    auth, setAuth,
 		lat, setLat,
 		lon, setLon,
-		dname, setDname,
-		dlat, setDlat,
-		dlon, setDlon
    }= useCachedResources()
-  
+   const [show, setShow] = useState(false);
+
+   useEffect(() => {
+    clearTimeout(timeout);
+    let timeout = setTimeout(() => {
+    setShow(true)
+    }, 200);
+  }, []);
 
   return (
     <View style={{flex: 1}}>
       <UserContext.Provider
        value={{
-        name, setName,
+        auth, setAuth,
         lat, setLat,
         lon, setLon,
-        dname, setDname,
-        dlat, setDlat,
-        dlon, setDlon
         }}>
-        <Navigation/>
+        {show? <Navigation/>:null}
       </UserContext.Provider>
     </View>
   );

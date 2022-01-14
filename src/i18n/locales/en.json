@@ -1,0 +1,40 @@
+{
+  "app":{
+    "home":"Home",
+    "login":"Login",
+    "email":"Email",
+    "password":"Password",
+    "no_account":"Not have account?",
+    "create_account":"Create account",
+    "signUp":"Create account",
+    "register":"Register",
+    "have_account":"Already have account?",
+    "account_created":"Your account created successfully",
+    "already_in_use":"This email already in use",
+    "email_invalid":"Invalid email",
+    "login_success":"Successfully login",
+    "user_not_found":"User not found",
+    "wrong_password":"Wrong password",
+    "change_lang":"Change language",
+    "logout":"logOut",
+    "add_place":"Add place",
+    "house":"House",
+    "rerstaurant":"Restaurant",
+    "park":"Park",
+    "place_added":"Place added successfully",
+    "edit_place":"Edit place",
+    "place_updated":"Place updated successfully",
+    "add":"Add",
+    "edit":"Update",
+    "type":"Type",
+    "name":"Name",
+    "phone":"Phone",
+    "lat":"Latitude",
+    "lon":"Longitude",
+    "all_places":"All places",
+    "no_item":"No places added"
+
+    
+  }
+ }
+ 

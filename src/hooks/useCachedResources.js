@@ -1,29 +1,21 @@
 import * as React from 'react';
+import  AsyncStorage from '@react-native-community/async-storage';
 
 export default function useCachedResources() {
 	const [isLoadingComplete, setLoadingComplete] = React.useState(false);
-	const [name , setName] = React.useState();
+	const [auth , setAuth] = React.useState();
 	const [lat , setLat] = React.useState();
 	const [lon , setLon] = React.useState();
-	const [dname , setDname] = React.useState();
-	const [dlat , setDlat] = React.useState();
-	const [dlon , setDlon] = React.useState();
 	// Load any resources or data that we need prior to rendering the app
 	React.useEffect(() => {
 		async function loadResourcesAndDataAsync() {
 			try {
-				const name= ''
-				setName(name)
+				const auth= await AsyncStorage.getItem('@auth');
+				setAuth(auth)
 				const lat= ''
 				setLat(lat)
 				const lon= ''
 				setLon(lon)
-				const dname= ''
-				setDname(dname)
-				const dlat= ''
-				setDlat(dlat)
-				const dlon= ''
-				setDlon(dlon)
 			} catch (e) {
 				// We might want to provide this error information to an error reporting service
 				console.warn(e);
@@ -37,11 +29,8 @@ export default function useCachedResources() {
 
 	return {
 		isLoadingComplete,setLoadingComplete,
-		name, setName,
+		auth, setAuth,
 		lat, setLat,
 		lon, setLon,
-		dname, setDname,
-		dlat, setDlat,
-		dlon, setDlon
 	};
 }

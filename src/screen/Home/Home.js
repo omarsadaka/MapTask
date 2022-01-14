@@ -1,24 +1,22 @@
 import React, { useState, useContext , useEffect } from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, StatusBar, Alert, PermissionsAndroid} from 'react-native';
-import {Icon , Button  , Input} from 'react-native-elements';
+import {View, Image, StyleSheet, TouchableOpacity, StatusBar, Alert, PermissionsAndroid} from 'react-native';
+import {Icon } from 'react-native-elements';
 import {Colors,Dimensions,Fonts} from '../../theme';
 import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
 import UserContext from '../../hooks/UserContext';
-import Modal from 'react-native-modal';
-import {getDistance} from 'geolib';
 import Geolocation from "react-native-geolocation-service";
-// import Geolocation from '@react-native-community/geolocation';
-import LoadingOverlay from '../../component/loading/LoadingOverlay';
-
+import { DefaultButton, DefaultText} from '../../common';
+import {useTranslation} from 'react-i18next';
+import firestore from '@react-native-firebase/firestore';
+import LoadData from '../../common/LoadData';
+const ASPECT_RATIO = Dimensions.DEVICE_WIDTH / Dimensions.DEVICE_HEIGHT;
+const LATITUDE_DELTA = 0.04;
+const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 const Home = ({navigation}) => {
-  const helper = useContext(UserContext);
-  const [loading, setLoading] = useState(true);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [distace, setDistance] = useState(null);
-  const [unit, setUnit] = useState(null);
-  const [currentLat, setCurretLat] = useState(null);
-  const [currentLon, setCurrentLon] = useState(null);
-  
+  const {t} = useTranslation();
+  const [lat, setLat] = useState(null);
+  const [lon, setLon] = useState(null);
+  const data = LoadData()
   useEffect(() => {
     requestPermissions()
     getCurrentLocation()
@@ -43,19 +41,16 @@ const Home = ({navigation}) => {
 
  // get user location
   const getCurrentLocation=()=>{
-    setLoading(true)
     Geolocation.getCurrentPosition(
       position => {
         console.log('setCurretLat',position.coords.latitude)
         console.log('setCurrentLon',position.coords.longitude)
-        setCurretLat(position.coords.latitude)
-        setCurrentLon(position.coords.longitude)
-        setLoading(false)
+        setLat(position.coords.latitude)
+        setLon(position.coords.longitude)
       },
       error => {
         Alert.alert(error.message.toString());
         console.log('asd', error.message)
-        setLoading(false)
       },
       {
         showLocationDialog: true,
@@ -65,126 +60,79 @@ const Home = ({navigation}) => {
       }
     );
   }
-  // Calculate distance
-  const loadDistance=()=>{
-    var dis = getDistance(
-      {latitude: helper.lat, longitude: helper.lon},
-      {latitude: helper.dlat, longitude: helper.dlon},
-      );
-      console.log('distace',dis)
-      if(dis>=1000){
-        setDistance(dis/1000)
-        setUnit('KM')
-      }else{
-        setDistance(dis)
-        setUnit('M')
-      }
+  
+  const onMapPress=(e)=> {
+    setLat(e.nativeEvent.coordinate.latitude)
+    setLon(e.nativeEvent.coordinate.longitude)
   }
 // Render map view
   const renderMap=()=>{
     return(
       <MapView
       style={{ width: '100%', height: '100%', flex: 1 }}
-      onRegionChange={e => console.log('region change: ', e)}
+      onPress={e => onMapPress(e)}
       zoomEnabled
-      maxZoomLevel={6}
-      // zoomControlEnabled
-      // followsUserLocation
+      // maxZoomLevel={3}
+      followsUserLocation
       provider={PROVIDER_GOOGLE}
       region={{
-          latitude: currentLat?currentLat:27.819490000000002,
-          longitude: currentLon?currentLon:34.59872,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
+          latitude: lat?lat:27.819490000000002,
+          longitude: lon?lon:34.59872,
+          latitudeDelta: LATITUDE_DELTA,
+          longitudeDelta:LONGITUDE_DELTA,
       }}>
-       <Marker
-        coordinate={{
-          latitude: currentLat?currentLat:27.819490000000002,
-          longitude: currentLon?currentLon:34.59872,
-        }}>
-    </Marker> 
+       {data.map(marker => (
+      <MapView.Marker 
+        coordinate={marker.coordinates}
+        onPress={()=> navigation.navigate('EditPlace',{Item: marker})}>
+        <Image source={marker.icon} style={styles.logo} resizeMode='contain'/>
+        {/* <Callout style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }} tooltip={true}>
+            <TouchableOpacity style={styles.Callout}
+             onPress={()=> navigation.navigate('EditPlace',{Item: marker})}>
+              <DefaultText title={marker.name} style={styles.name}/>
+            </TouchableOpacity>                        
+        </Callout> */}
+      </MapView.Marker>
+  ))}
   </MapView>
     )
   }
 
-  // Render source input and destination
-  const renderInput=()=>{
+  const renderHeader=()=>{
     return(
-       <View style={styles.inputView}>
-         <TouchableOpacity style={styles.iconView}
-         onPress={()=> navigation.openDrawer()}>
+       <View style={styles.header}>
+         <TouchableOpacity style={styles.iconView} onPress={()=> navigation.openDrawer()}>
            <Icon name='menu' type="feather" 
                size={Dimensions.DEVICE_HEIGHT*0.03}
                color={Colors.black}
                style={styles.icon}
              />
         </TouchableOpacity>
-           <TouchableOpacity style={styles.input}
-           onPress={()=> navigation.navigate('Source')}>
-            <Text style={[styles.label_style,{color: helper.lat? Colors.black: Colors.textSubtitle}]}> {helper.name? helper.name : 'Your Location'} </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.input}
-          onPress={()=> navigation.navigate('Destination')}>
-            <Text style={[styles.label_style,{color: helper.dlat? Colors.black: Colors.textSubtitle}]}> { helper.dname? helper.dname : 'Destination'} </Text>
-          </TouchableOpacity>
-       </View>
-    )
-  }
- // Render request button
-  const renderBtn=()=>{
-    return(
-       <View style={styles.btnView}>
-      <Button
-      buttonStyle={styles.btnStyle}
-      title={'REQUEST RD'}
-      titleStyle={styles.btnText}
-      loading={null}
-      onPress={()=> {
-        loadDistance()
-        setModalVisible(true)
-      }}
-     />
+        <DefaultText title={t('app:home')} style={styles.title}/>
        </View>
     )
   }
 
-  // Render popup model
-  const renderModel=()=>{
+  const renderBtn=()=>{
     return(
-        <Modal
-                style={{ flex: 1 }}
-                isVisible={modalVisible}
-                animationInTiming={1000}
-                animationOutTiming={1000}
-                backdropTransitionInTiming={1000}
-                backdropTransitionOutTiming={1000}>
-                <KeyboardAvoidingView enabled style={styles.model}>
-                    <TouchableOpacity style={{alignItems:'flex-start',width:'95%',marginTop:Dimensions.DEVICE_HEIGHT*0.01}}
-                    onPress={()=> setModalVisible(false)}>
-                     <Icon name='x-circle' type="feather" size={Dimensions.DEVICE_HEIGHT*0.04} color={Colors.black}/>
-                    </TouchableOpacity>
-                    <View style={styles.modelCard}>
-                      {helper.lat&& helper.dlat?
-                        <View>
-                         <Text style={[styles.alertText,{fontSize: Dimensions.DEVICE_WIDTH*0.03}]}>{'The distance between the source and destination is:'}</Text>
-                         <Text style={styles.alertText}>{distace} {unit}</Text>
-                        </View>
-                      :
-                         <Text style={styles.alertText}>{'Please select source/destination'}</Text>
-                      }
-                    </View>
-                </KeyboardAvoidingView>
-            </Modal>
+    <View style={styles.btnContainer}>
+      <DefaultButton title={t('app:add_place')} 
+      style={{width: Dimensions.DEVICE_WIDTH*0.5}}
+      onClick={()=> navigation.push('AddPlace',{
+        Lat: lat,
+        Lon: lon
+      })}/>
+    </View>
     )
-}
+  }
+ 
+ 
   return (
     <View style={styles.container}>
       <StatusBar translucent barStyle='dark-content' backgroundColor='transparent' />
       {renderMap()}
-      {renderInput()}
+      {renderHeader()}
       {renderBtn()}
-      {renderModel()}
     </View>
   );
 };
@@ -194,45 +142,15 @@ const styles = StyleSheet.create({
       flex:1,
       alignItems:'center'
     },
-    inputView:{
+    header:{
       alignItems:'center',
+      flexDirection:'row',
       borderRadius: Dimensions.DEVICE_WIDTH*0.012,
-      backgroundColor:Colors.grayLight,
-      width:Dimensions.DEVICE_WIDTH*0.88,
+      backgroundColor:Colors.red,
+      width:Dimensions.DEVICE_WIDTH*0.95,
       paddingVertical: Dimensions.DEVICE_HEIGHT*0.02,
       position:'absolute',
-      top: Dimensions.DEVICE_HEIGHT*0.05
-    },
-    btnView:{
-      position:'absolute',
-      bottom: Dimensions.DEVICE_HEIGHT*0.03
-    },
-    btnStyle:{
-      width:Dimensions.DEVICE_WIDTH*0.5,
-      borderRadius: Dimensions.DEVICE_WIDTH*0.012,
-    },
-    btnText:{
-      color: Colors.white,
-      fontSize: Dimensions.DEVICE_HEIGHT * 0.023,
-      fontFamily: Fonts.CairoBold,
-      fontWeight: 'bold',
-    },
-    input:{
-      width:Dimensions.DEVICE_WIDTH*0.8,
-      height:Dimensions.DEVICE_HEIGHT*0.06,
-      marginTop: Dimensions.DEVICE_HEIGHT*0.01,
-      backgroundColor:Colors.white,
-      borderRadius:6,
-      alignItems:'flex-start'
-    },
-    label_style:{
-      fontSize: Dimensions.DEVICE_HEIGHT * 0.02,
-      fontFamily: Fonts.CairoBold,
-      fontWeight: '200',
-      height: Dimensions.DEVICE_HEIGHT*0.06,
-      textAlign: 'left',
-      textAlignVertical:'center',
-      marginHorizontal: Dimensions.DEVICE_WIDTH*0.015
+      top: Dimensions.DEVICE_HEIGHT*0.04
     },
     icon:{
       width: Dimensions.DEVICE_WIDTH*0.08,
@@ -242,28 +160,42 @@ const styles = StyleSheet.create({
       alignItems:'center', justifyContent:'center',
     },
     iconView:{
-      alignItems:'flex-start',
-      width:Dimensions.DEVICE_WIDTH*0.8
+      alignSelf:'flex-start',
+      marginHorizontal: Dimensions.DEVICE_WIDTH*0.03
     },
-    model:{
-      height: Dimensions.DEVICE_HEIGHT / 4, 
-      backgroundColor: Colors.white, 
-      alignItems: 'center',
-      borderRadius: Dimensions.DEVICE_WIDTH*0.04
-    },
-    modelCard:{
-      width: '100%',
-      alignItems: 'center',
-      marginTop: Dimensions.DEVICE_HEIGHT*0.01
-    },
-    alertText:{
-      color: Colors.black,
-      fontSize: Dimensions.DEVICE_HEIGHT * 0.025,
+    title:{
+      flex:1,
+      fontSize: Dimensions.DEVICE_WIDTH*0.05,
       fontFamily: Fonts.CairoBold,
-      fontWeight: 'bold',
-      textAlign:'center',
-      marginTop: Dimensions.DEVICE_HEIGHT*0.02
+      fontWeight:'bold',
+      textAlign:'left',
+      marginHorizontal: Dimensions.DEVICE_WIDTH*0.05,
+      color: Colors.white
     },
+    btnContainer:{
+      alignItems:'center',
+      position:'absolute',
+      bottom: Dimensions.DEVICE_HEIGHT*0.02
+    },
+    logo:{
+      height: Dimensions.DEVICE_WIDTH*0.07,
+      width:Dimensions.DEVICE_WIDTH*0.07
+    },
+    Callout:{
+      width: Dimensions.DEVICE_WIDTH*0.3,
+      backgroundColor: Colors.white,
+      alignItems:'center', justifyContent:'center',
+      borderRadius: 5,
+      elevation:3,shadowOpacity:0.02,
+      padding:5
+    },
+    name:{
+      color: Colors.black,
+      fontSize: Dimensions.DEVICE_WIDTH*0.035,
+      fontFamily: Fonts.CairoBold,
+      fontWeight:'bold',
+    }
+   
 });
 
 export default Home;
