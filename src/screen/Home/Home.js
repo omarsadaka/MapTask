@@ -72,7 +72,7 @@ const Home = ({navigation}) => {
       style={{ width: '100%', height: '100%', flex: 1 }}
       onPress={e => onMapPress(e)}
       zoomEnabled
-      // maxZoomLevel={3}
+      maxZoomLevel={3}
       followsUserLocation
       provider={PROVIDER_GOOGLE}
       region={{
